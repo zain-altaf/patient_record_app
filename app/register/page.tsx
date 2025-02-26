@@ -7,31 +7,53 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { useEffect, useState } from 'react';
 
-// ✅ Load environment variables correctly
-const googleClientId = process.env.NEXT_PUBLIC_MEDPLUM_GOOGLE_CLIENT_ID || '';
+// Get environment variables
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 const medplumProjectId = process.env.NEXT_PUBLIC_MEDPLUM_PROJECT_ID || '';
 const recaptchaSiteKey = process.env.NEXT_PUBLIC_MEDPLUM_RECAPTCHA_SITE_KEY || '';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
   useEffect(() => {
+    // Check if reCAPTCHA is already loaded
     if (typeof window !== 'undefined' && (window as any).grecaptcha) {
       setRecaptchaLoaded(true);
+    }
+
+    // Debug info
+    console.log('reCAPTCHA site key:', recaptchaSiteKey);
+
+    if (!recaptchaSiteKey) {
+      setLoadError('reCAPTCHA site key is missing');
     }
   }, []);
 
   return (
     <>
-      {/* ✅ Load Google reCAPTCHA before using it */}
+      {/* Load Google reCAPTCHA */}
       <Script
-        src="https://www.google.com/recaptcha/api.js"
+        src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
         strategy="lazyOnload"
-        onLoad={() => setRecaptchaLoaded(true)}
+        onLoad={() => {
+          console.log('reCAPTCHA script loaded');
+          setRecaptchaLoaded(true);
+        }}
+        onError={() => {
+          console.error('Failed to load reCAPTCHA');
+          setLoadError('Failed to load reCAPTCHA');
+        }}
       />
 
       <div className="bg-white rounded-lg shadow-lg p-8">
-        {recaptchaLoaded ? (
+        {loadError ? (
+          <div className="text-center text-red-500">
+            <p>Error: {loadError}</p>
+            <p className="mt-2">Please try again later or contact support.</p>
+          </div>
+        ) : recaptchaLoaded ? (
           <RegisterForm
             type="patient"
             projectId={medplumProjectId}
