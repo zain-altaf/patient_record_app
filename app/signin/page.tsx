@@ -5,7 +5,7 @@ import { UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 // import { RegisterPage } from "./RegisterPage"
 
-const googleClientId = '921088377005-3j1sa10vr6hj86jgmdfh2l53v3mp7lfi.apps.googleusercontent.com';
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 export default function SignInPage() {
   const router = useRouter();
