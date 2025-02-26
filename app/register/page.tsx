@@ -1,26 +1,23 @@
 'use client';
 
-import { MedplumClient } from '@medplum/core';
-import { RegisterForm, useMedplumProfile } from '@medplum/react';
+import { RegisterForm } from '@medplum/react';
 import { UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// Use environment variables for sensitive data
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const MEDPLUM_PROJECT_ID = process.env.MEDPLUM_PROJECT_ID;
-export const MEDPLUM_RECAPTCHA_SITE_KEY = process.env.MEDPLUM_RECAPTCHA_SITE_KEY;
+const googleClientId = process.env.NEXT_PUBLIC_MEDPLUM_GOOGLE_CLIENT_ID || '';
+const medplumProjectId = process.env.NEXT_PUBLIC_MEDPLUM_PROJECT_ID || '';
+const recaptchaSiteKey = process.env.NEXT_PUBLIC_MEDPLUM_RECAPTCHA_SITE_KEY || '';
 
 export default function RegisterPage() {
   const router = useRouter();
 
   return (
-    // TODO: change default practitioner assignment in prod
     <div className="bg-white rounded-lg shadow-lg p-8">
       <RegisterForm
         type="patient"
-        projectId={MEDPLUM_PROJECT_ID}
+        projectId={medplumProjectId}
         googleClientId={googleClientId}
-        recaptchaSiteKey={MEDPLUM_RECAPTCHA_SITE_KEY}
+        recaptchaSiteKey={recaptchaSiteKey}
         onSuccess={() => {
           router.push('/homepage');
         }}
