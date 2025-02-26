@@ -18,6 +18,22 @@ export default function RegisterPage() {
   const [loadError, setLoadError] = useState('');
   const [envDebug, setEnvDebug] = useState('');
 
+  const loadRecaptcha = () => {
+    setLoadError('');
+    // Create a new script element and append it to the document
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
+    script.onload = () => {
+      console.log('✅ reCAPTCHA script loaded manually');
+      setRecaptchaLoaded(true);
+    };
+    script.onerror = () => {
+      console.error('❌ Failed to load reCAPTCHA manually');
+      setLoadError('Failed to load reCAPTCHA after retry');
+    };
+    document.head.appendChild(script);
+  };
+
   useEffect(() => {
     // Debugging: Log the environment variable
     const debugInfo = `reCAPTCHA site key: ${recaptchaSiteKey}`;
@@ -29,29 +45,31 @@ export default function RegisterPage() {
       return;
     }
 
-    // Wait for reCAPTCHA to be available
-    const checkRecaptcha = setInterval(() => {
-      if (typeof window !== 'undefined' && (window as any).grecaptcha) {
-        console.log('✅ reCAPTCHA is now available');
-        setRecaptchaLoaded(true);
-        clearInterval(checkRecaptcha);
-      }
-    }, 500); // Check every 500ms
-
-    return () => clearInterval(checkRecaptcha);
+    // We'll rely on the Script component for initial loading
+    return () => {
+      // Cleanup if needed
+    };
   }, []);
 
   return (
     <>
       {/* Load Google reCAPTCHA */}
       <Script
-        src="https://www.google.com/recaptcha/api.js"
+        src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
         strategy="lazyOnload"
         onLoad={() => {
           console.log('✅ reCAPTCHA script loaded');
+          setRecaptchaLoaded(true);
+
+          // Add the grecaptcha.ready implementation
+          if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+            (window as any).grecaptcha.ready(function () {
+              console.log('reCAPTCHA is ready');
+            });
+          }
         }}
-        onError={() => {
-          console.error('❌ Failed to load reCAPTCHA');
+        onError={(e) => {
+          console.error('❌ Failed to load reCAPTCHA', e);
           setLoadError('Failed to load reCAPTCHA');
         }}
       />
@@ -62,6 +80,9 @@ export default function RegisterPage() {
             <p>Error: {loadError}</p>
             <p className="mt-2">Environment Debug: {envDebug}</p>
             <p className="mt-2">Please try again later or contact support.</p>
+            <button onClick={loadRecaptcha} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+              Retry Loading reCAPTCHA
+            </button>
           </div>
         ) : recaptchaLoaded ? (
           <RegisterForm
@@ -70,7 +91,20 @@ export default function RegisterPage() {
             googleClientId={googleClientId}
             recaptchaSiteKey={recaptchaSiteKey}
             onSuccess={() => {
-              router.push('/homepage');
+              // Execute reCAPTCHA before redirecting
+              if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+                (window as any).grecaptcha.ready(function () {
+                  (window as any).grecaptcha
+                    .execute(recaptchaSiteKey, { action: 'homepage' })
+                    .then(function (token: string) {
+                      console.log('Got reCAPTCHA token:', token.substring(0, 10) + '...');
+                      router.push('/homepage');
+                    });
+                });
+              } else {
+                // Fallback if grecaptcha is not available
+                router.push('/homepage');
+              }
             }}
           >
             <div className="text-center mb-6">
@@ -89,6 +123,15 @@ export default function RegisterPage() {
           <div className="text-center">
             <p>Loading reCAPTCHA...</p>
             <p className="text-xs text-gray-500 mt-2">Environment Debug: {envDebug}</p>
+            <div className="mt-4">
+              <p className="text-sm text-gray-600">Taking too long to load?</p>
+              <button
+                onClick={loadRecaptcha}
+                className="mt-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
+              >
+                Reload reCAPTCHA
+              </button>
+            </div>
           </div>
         )}
       </div>
