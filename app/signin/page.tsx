@@ -3,6 +3,7 @@
 import { SignInForm } from '@medplum/react';
 import { UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 // import { RegisterPage } from "./RegisterPage"
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -22,9 +23,9 @@ export default function SignInPage() {
           <UserCircle className="w-16 h-16 text-blue-500 mx-auto mb-2" />
           <h2 className="text-2xl font-semibold text-gray-800">Sign in</h2>
           <div className="mt-4">
-            <a href="/register" className="text-blue-500 hover:text-blue-700 text-sm">
+            <Link href="/register" className="text-blue-500 hover:text-blue-700 text-sm">
               Don't have an account? Register here
-            </a>
+            </Link>
           </div>
         </div>
       </SignInForm>
