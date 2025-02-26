@@ -1,0 +1,38 @@
+{
+    "resourceType": "Patient",
+    "id": "123",
+    "name": [
+        {
+            "use": "official",
+            "given": ["John"],
+            "family": "Doe"
+        }
+    ],
+    "telecom": [
+        {
+            "system": "phone",
+            "value": "4164223465",
+            "use": "home"
+        },
+        {
+            "system": "email",
+            "value": "john.doe@example.com",
+            "use": "work"
+        }
+    ],
+    "gender": "male",
+    "birthDate": "1990-01-01",
+    "address": [
+        {
+            "use": "home",
+            "line": ["123 Main St"],
+            "city": "Toronto",
+            "state": "Ontario",
+            "postalCode": "M5A 1A1",
+            "country": "Canada",
+            "period": {
+                "start": "2018-01-01"
+            }
+        }
+    ]
+}
