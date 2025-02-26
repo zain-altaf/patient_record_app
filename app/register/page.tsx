@@ -19,58 +19,40 @@ export default function RegisterPage() {
   const [envDebug, setEnvDebug] = useState('');
 
   useEffect(() => {
-    // Check if reCAPTCHA is already loaded
-    if (typeof window !== 'undefined' && (window as any).grecaptcha) {
-      setRecaptchaLoaded(true);
-    }
-
-    // Debug info
+    // Debugging: Log the environment variable
     const debugInfo = `reCAPTCHA site key: ${recaptchaSiteKey}`;
     console.log(debugInfo);
     setEnvDebug(debugInfo);
 
     if (!recaptchaSiteKey) {
       setLoadError('reCAPTCHA site key is missing');
+      return;
     }
-  }, []);
 
-  // Try loading reCAPTCHA with a different approach
-  const loadRecaptcha = () => {
-    try {
-      const script = document.createElement('script');
-      script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log('reCAPTCHA script loaded manually');
+    // Wait for reCAPTCHA to be available
+    const checkRecaptcha = setInterval(() => {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+        console.log('✅ reCAPTCHA is now available');
         setRecaptchaLoaded(true);
-      };
-      script.onerror = (error) => {
-        console.error('Failed to load reCAPTCHA manually', error);
-        setLoadError(`Failed to load reCAPTCHA: ${error}`);
-      };
-      document.head.appendChild(script);
-    } catch (error) {
-      console.error('Error in manual reCAPTCHA loading', error);
-      setLoadError(`Error in manual reCAPTCHA loading: ${error}`);
-    }
-  };
+        clearInterval(checkRecaptcha);
+      }
+    }, 500); // Check every 500ms
+
+    return () => clearInterval(checkRecaptcha);
+  }, []);
 
   return (
     <>
       {/* Load Google reCAPTCHA */}
       <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
+        src="https://www.google.com/recaptcha/api.js"
         strategy="lazyOnload"
         onLoad={() => {
-          console.log('reCAPTCHA script loaded');
-          setRecaptchaLoaded(true);
+          console.log('✅ reCAPTCHA script loaded');
         }}
-        onError={(e) => {
-          console.error('Failed to load reCAPTCHA', e);
+        onError={() => {
+          console.error('❌ Failed to load reCAPTCHA');
           setLoadError('Failed to load reCAPTCHA');
-          // Try alternative loading method
-          loadRecaptcha();
         }}
       />
 
@@ -80,9 +62,6 @@ export default function RegisterPage() {
             <p>Error: {loadError}</p>
             <p className="mt-2">Environment Debug: {envDebug}</p>
             <p className="mt-2">Please try again later or contact support.</p>
-            <button onClick={loadRecaptcha} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-              Retry Loading reCAPTCHA
-            </button>
           </div>
         ) : recaptchaLoaded ? (
           <RegisterForm
@@ -110,15 +89,6 @@ export default function RegisterPage() {
           <div className="text-center">
             <p>Loading reCAPTCHA...</p>
             <p className="text-xs text-gray-500 mt-2">Environment Debug: {envDebug}</p>
-            <div className="mt-4">
-              <p className="text-sm text-gray-600">Taking too long to load?</p>
-              <button
-                onClick={loadRecaptcha}
-                className="mt-2 px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
-              >
-                Reload reCAPTCHA
-              </button>
-            </div>
           </div>
         )}
       </div>
