@@ -19,11 +19,6 @@ export default function RegisterPage() {
   const [envDebug, setEnvDebug] = useState('');
 
   useEffect(() => {
-    // Check if reCAPTCHA is already loaded
-    if (typeof window !== 'undefined' && (window as any).grecaptcha) {
-      setRecaptchaLoaded(true);
-    }
-
     // Debug info
     const debugInfo = `reCAPTCHA site key: ${recaptchaSiteKey}`;
     console.log(debugInfo);
@@ -31,7 +26,23 @@ export default function RegisterPage() {
 
     if (!recaptchaSiteKey) {
       setLoadError('reCAPTCHA site key is missing');
+      return;
     }
+
+    // Check if reCAPTCHA is already loaded and ready
+    const checkRecaptchaReady = () => {
+      if (typeof window !== 'undefined' && (window as any).grecaptcha && (window as any).grecaptcha.ready) {
+        (window as any).grecaptcha.ready(() => {
+          console.log('reCAPTCHA is ready');
+          setRecaptchaLoaded(true);
+        });
+      } else {
+        // If not ready yet, check again after a short delay
+        setTimeout(checkRecaptchaReady, 100);
+      }
+    };
+
+    checkRecaptchaReady();
   }, []);
 
   // Try loading reCAPTCHA with a different approach
@@ -43,7 +54,20 @@ export default function RegisterPage() {
       script.defer = true;
       script.onload = () => {
         console.log('reCAPTCHA script loaded manually');
-        setRecaptchaLoaded(true);
+        // Wait for grecaptcha to be fully initialized
+        if ((window as any).grecaptcha && (window as any).grecaptcha.ready) {
+          (window as any).grecaptcha.ready(() => {
+            setRecaptchaLoaded(true);
+          });
+        } else {
+          setTimeout(() => {
+            if ((window as any).grecaptcha) {
+              setRecaptchaLoaded(true);
+            } else {
+              setLoadError('reCAPTCHA failed to initialize');
+            }
+          }, 1000);
+        }
       };
       script.onerror = (error) => {
         console.error('Failed to load reCAPTCHA manually', error);
@@ -61,10 +85,21 @@ export default function RegisterPage() {
       {/* Load Google reCAPTCHA */}
       <Script
         src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
-        strategy="lazyOnload"
+        strategy="beforeInteractive"
         onLoad={() => {
           console.log('reCAPTCHA script loaded');
-          setRecaptchaLoaded(true);
+          // Wait for grecaptcha to be fully initialized
+          if ((window as any).grecaptcha && (window as any).grecaptcha.ready) {
+            (window as any).grecaptcha.ready(() => {
+              setRecaptchaLoaded(true);
+            });
+          } else {
+            setTimeout(() => {
+              if ((window as any).grecaptcha) {
+                setRecaptchaLoaded(true);
+              }
+            }, 1000);
+          }
         }}
         onError={(e) => {
           console.error('Failed to load reCAPTCHA', e);
@@ -73,6 +108,15 @@ export default function RegisterPage() {
           loadRecaptcha();
         }}
       />
+
+      {/* Add TypeScript interface for window object */}
+      <Script id="recaptcha-types" strategy="beforeInteractive">
+        {`
+          interface Window {
+            grecaptcha: any;
+          }
+        `}
+      </Script>
 
       <div className="bg-white rounded-lg shadow-lg p-8">
         {loadError ? (
